@@ -3,7 +3,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 from telegram import Update
-from telegram.ext import Application, MessageHandler, filters, ContextTypes
+from telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes
 from dotenv import load_dotenv
 
 # Load environment variables
@@ -49,6 +49,72 @@ def save_message(text: str) -> None:
     logger.info(f"Message saved to {filename}")
 
 
+def read_note(filename: str) -> str | None:
+    """Read note file and return its content"""
+    filepath = NOTES_DIR / filename
+    
+    if not filepath.exists():
+        return None
+    
+    try:
+        with open(filepath, 'r', encoding='utf-8') as f:
+            return f.read()
+    except Exception as e:
+        logger.error(f"Error reading file {filename}: {e}")
+        return None
+
+
+async def cmd_today(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /today command - get today's note"""
+    # Check if message is from authorized user
+    if update.effective_user.id != ROOT_ID:
+        logger.warning(f"Unauthorized access attempt from user {update.effective_user.id}")
+        return
+    
+    filename = get_today_filename()
+    content = read_note(filename)
+    
+    if content:
+        await update.message.reply_text(f"📝 Заметка за {filename[:-3]}:\n\n{content}")
+    else:
+        await update.message.reply_text(f"📭 Заметка за сегодня ({filename[:-3]}) пока пуста")
+
+
+async def cmd_get(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Handle /get command - get note for specific date"""
+    # Check if message is from authorized user
+    if update.effective_user.id != ROOT_ID:
+        logger.warning(f"Unauthorized access attempt from user {update.effective_user.id}")
+        return
+    
+    # Check if date argument is provided
+    if not context.args or len(context.args) == 0:
+        await update.message.reply_text(
+            "❌ Укажите дату в формате dd-Mmm-yyyy\n"
+            "Например: /get 11-Oct-2025"
+        )
+        return
+    
+    # Get the date argument
+    date_str = context.args[0]
+    filename = date_str if date_str.endswith('.md') else date_str + '.md'
+    
+    # Validate filename format (basic check)
+    if not filename.endswith('.md') or len(filename) < 15:
+        await update.message.reply_text(
+            "❌ Неверный формат даты. Используйте формат dd-Mmm-yyyy\n"
+            "Например: /get 11-Oct-2025"
+        )
+        return
+    
+    content = read_note(filename)
+    
+    if content:
+        await update.message.reply_text(f"📝 Заметка за {filename[:-3]}:\n\n{content}")
+    else:
+        await update.message.reply_text(f"📭 Заметка за {filename[:-3]} не найдена")
+
+
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     """Handle incoming text messages"""
     # Check if message is from authorized user
@@ -86,6 +152,10 @@ def main() -> None:
     
     # Create application
     application = Application.builder().token(BOT_TOKEN).build()
+    
+    # Add command handlers
+    application.add_handler(CommandHandler("today", cmd_today))
+    application.add_handler(CommandHandler("get", cmd_get))
     
     # Add message handler for text messages
     application.add_handler(
