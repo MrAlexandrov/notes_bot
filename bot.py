@@ -1,5 +1,6 @@
 import os
 import logging
+import re
 from datetime import datetime
 from pathlib import Path
 from telegram import Update
@@ -49,6 +50,13 @@ def save_message(text: str) -> None:
     logger.info(f"Message saved to {filename}")
 
 
+def escape_markdown_v2(text: str) -> str:
+    """Escape special characters for MarkdownV2"""
+    # Characters that need to be escaped in MarkdownV2
+    escape_chars = r'_*[]()~`>#+-=|{}.!'
+    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
+
+
 def read_note(filename: str) -> str | None:
     """Read note file and return its content"""
     filepath = NOTES_DIR / filename
@@ -75,9 +83,17 @@ async def cmd_today(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     content = read_note(filename)
     
     if content:
-        await update.message.reply_text(f"📝 Заметка за {filename[:-3]}:\n\n{content}")
+        date_escaped = escape_markdown_v2(filename[:-3])
+        await update.message.reply_text(
+            f"📝 *Заметка за {date_escaped}:*\n\n{content}",
+            parse_mode='MarkdownV2'
+        )
     else:
-        await update.message.reply_text(f"📭 Заметка за сегодня ({filename[:-3]}) пока пуста")
+        date_escaped = escape_markdown_v2(filename[:-3])
+        await update.message.reply_text(
+            f"📭 Заметка за сегодня \\({date_escaped}\\) пока пуста",
+            parse_mode='MarkdownV2'
+        )
 
 
 async def cmd_get(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -90,8 +106,9 @@ async def cmd_get(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Check if date argument is provided
     if not context.args or len(context.args) == 0:
         await update.message.reply_text(
-            "❌ Укажите дату в формате dd-Mmm-yyyy\n"
-            "Например: /get 11-Oct-2025"
+            "❌ Укажите дату в формате dd\\-Mmm\\-yyyy\n"
+            "Например: `/get 11-Oct-2025`",
+            parse_mode='MarkdownV2'
         )
         return
     
@@ -102,17 +119,26 @@ async def cmd_get(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     # Validate filename format (basic check)
     if not filename.endswith('.md') or len(filename) < 15:
         await update.message.reply_text(
-            "❌ Неверный формат даты. Используйте формат dd-Mmm-yyyy\n"
-            "Например: /get 11-Oct-2025"
+            "❌ Неверный формат даты\\. Используйте формат dd\\-Mmm\\-yyyy\n"
+            "Например: `/get 11-Oct-2025`",
+            parse_mode='MarkdownV2'
         )
         return
     
     content = read_note(filename)
     
     if content:
-        await update.message.reply_text(f"📝 Заметка за {filename[:-3]}:\n\n{content}")
+        date_escaped = escape_markdown_v2(filename[:-3])
+        await update.message.reply_text(
+            f"📝 *Заметка за {date_escaped}:*\n\n{content}",
+            parse_mode='MarkdownV2'
+        )
     else:
-        await update.message.reply_text(f"📭 Заметка за {filename[:-3]} не найдена")
+        date_escaped = escape_markdown_v2(filename[:-3])
+        await update.message.reply_text(
+            f"📭 Заметка за {date_escaped} не найдена",
+            parse_mode='MarkdownV2'
+        )
 
 
 async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
