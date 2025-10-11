@@ -45,7 +45,7 @@ def save_message(text: str) -> None:
         if file_exists:
             # Add empty line before new message
             f.write('\n\n')
-        f.write(text)
+        f.write(f"```\n{text}\n```")
     
     logger.info(f"Message saved to {filename}")
 
