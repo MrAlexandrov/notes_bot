@@ -52,7 +52,9 @@ curl -sSL https://install.python-poetry.org | python3 -
 poetry install
 
 # Запустите бота
-poetry run python bot.py
+poetry run python main.py
+# или используя make
+make run
 ```
 
 ### 5. Проверьте работу
@@ -108,16 +110,34 @@ poetry update
 
 ```
 telegram-notes-bot/
-├── bot.py              # Основной код бота
-├── pyproject.toml      # Poetry конфигурация и зависимости
-├── poetry.lock         # Зафиксированные версии зависимостей
-├── Dockerfile         # Docker образ
-├── docker-compose.yml # Docker Compose конфигурация
-├── .env              # Переменные окружения (создать вручную)
-├── .env.example      # Шаблон для .env
-├── .gitignore        # Игнорируемые файлы
-└── notes/            # Папка с заметками (создается автоматически)
+├── src/                  # Исходный код бота
+│   ├── __init__.py      # Инициализация пакета
+│   ├── bot.py           # Главный модуль бота
+│   ├── config.py        # Конфигурация и настройки
+│   ├── handlers.py      # Обработчики команд и сообщений
+│   ├── notes.py         # Работа с заметками
+│   └── utils.py         # Вспомогательные функции
+├── main.py              # Точка входа в приложение
+├── bot.py.old           # Старая версия (резервная копия)
+├── pyproject.toml       # Poetry конфигурация и зависимости
+├── poetry.lock          # Зафиксированные версии зависимостей
+├── Makefile             # Команды для управления проектом
+├── Dockerfile           # Docker образ
+├── docker-compose.yml   # Docker Compose конфигурация
+├── .env                 # Переменные окружения (создать вручную)
+├── .env.example         # Шаблон для .env
+├── .gitignore           # Игнорируемые файлы
+└── notes/               # Папка с заметками (создается автоматически)
 ```
+
+### Описание модулей
+
+- **[`src/config.py`](src/config.py)** - Загрузка переменных окружения, настройка логирования, константы конфигурации
+- **[`src/utils.py`](src/utils.py)** - Вспомогательные функции (генерация имени файла, экранирование Markdown)
+- **[`src/notes.py`](src/notes.py)** - Функции для работы с заметками (сохранение и чтение)
+- **[`src/handlers.py`](src/handlers.py)** - Обработчики команд `/today`, `/get` и текстовых сообщений
+- **[`src/bot.py`](src/bot.py)** - Инициализация и запуск бота
+- **[`main.py`](main.py)** - Точка входа в приложение
 
 ## Формат заметок
 

@@ -15,10 +15,11 @@ RUN poetry config virtualenvs.create false
 RUN poetry install --no-interaction --no-ansi --no-root
 
 # Copy bot code
-COPY bot.py .
+COPY src/ ./src/
+COPY main.py .
 
 # Create notes directory
 RUN mkdir -p /app/notes
 
 # Run the bot
-CMD ["python", "bot.py"]
+CMD ["python", "main.py"]

@@ -2,7 +2,7 @@ install:
 	poetry install
 
 run:
-	poetry run python -m bot
+	poetry run python main.py
 
 clean:
 	find . -type f -name '*.pyc' -delete

@@ -1,87 +1,13 @@
-import os
+"""Command and message handlers for the bot."""
+
 import logging
-import re
-from datetime import datetime, timedelta, timezone
-from pathlib import Path
 from telegram import Update
-from telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes
-from dotenv import load_dotenv
+from telegram.ext import ContextTypes
+from .config import ROOT_ID
+from .notes import save_message, read_note
+from .utils import get_today_filename, escape_markdown_v2
 
-# Load environment variables
-load_dotenv()
-
-# Configure logging
-logging.basicConfig(
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-    level=logging.INFO
-)
-logging.getLogger("httpx").setLevel(logging.WARNING)
 logger = logging.getLogger(__name__)
-
-# Get configuration from environment
-BOT_TOKEN = os.getenv('BOT_TOKEN')
-ROOT_ID = int(os.getenv('ROOT_ID'))
-
-# Notes directory
-NOTES_DIR = Path('notes')
-NOTES_DIR.mkdir(exist_ok=True)
-
-
-def get_today_filename() -> str:
-    """Generate filename in format dd-Mmm-yyyy (e.g., 11-Oct-2025)"""
-    # Get current UTC time
-    now_utc = datetime.now(timezone.utc)
-    
-    # Convert to Moscow time (UTC+3)
-    moscow_time = now_utc + timedelta(hours=3)
-    
-    # If time is before 7 AM in Moscow, consider it previous day
-    if moscow_time.hour < 7:
-        # Subtract one day
-        adjusted_time = moscow_time - timedelta(days=1)
-    else:
-        adjusted_time = moscow_time
-    
-    return adjusted_time.strftime('%d-%b-%Y') + '.md'
-
-
-def save_message(text: str) -> None:
-    """Save message to today's note file"""
-    filename = get_today_filename()
-    filepath = NOTES_DIR / filename
-    
-    # Check if file exists to determine if we need to add a newline
-    file_exists = filepath.exists()
-    
-    with open(filepath, 'a', encoding='utf-8') as f:
-        if file_exists:
-            # Add empty line before new message
-            f.write('\n\n')
-        f.write(f"```\n{text}\n```")
-    
-    logger.info(f"Message saved to {filename}")
-
-
-def escape_markdown_v2(text: str) -> str:
-    """Escape special characters for MarkdownV2"""
-    # Characters that need to be escaped in MarkdownV2
-    escape_chars = r'_*[]()~`>#+-=|{}.!'
-    return re.sub(f'([{re.escape(escape_chars)}])', r'\\\1', text)
-
-
-def read_note(filename: str) -> str | None:
-    """Read note file and return its content"""
-    filepath = NOTES_DIR / filename
-    
-    if not filepath.exists():
-        return None
-    
-    try:
-        with open(filepath, 'r', encoding='utf-8') as f:
-            return f.read()
-    except Exception as e:
-        logger.error(f"Error reading file {filename}: {e}")
-        return None
 
 
 async def cmd_today(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -176,35 +102,3 @@ async def handle_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> 
     except Exception as e:
         logger.error(f"Error saving message: {e}")
         await update.message.reply_text("❌ Ошибка при сохранении сообщения")
-
-
-def main() -> None:
-    """Start the bot"""
-    if not BOT_TOKEN:
-        logger.error("BOT_TOKEN not found in environment variables")
-        return
-    
-    if not ROOT_ID:
-        logger.error("ROOT_ID not found in environment variables")
-        return
-    
-    # Create application
-    application = Application.builder().token(BOT_TOKEN).build()
-    
-    # Add command handlers
-    application.add_handler(CommandHandler("today", cmd_today))
-    application.add_handler(CommandHandler("get", cmd_get))
-    
-    # Add message handler for text messages
-    application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
-    )
-    
-    logger.info("Bot started successfully")
-    
-    # Run the bot
-    application.run_polling(allowed_updates=Update.ALL_TYPES)
-
-
-if __name__ == '__main__':
-    main()
