@@ -4,6 +4,10 @@ install:
 run:
 	poetry run python main.py
 
+format:
+	poetry run ruff check --fix --unsafe-fixes src .
+	poetry run ruff format src .
+
 clean:
 	find . -type f -name '*.pyc' -delete
 	find . -type d -name '__pycache__' -exec rm -rf {} +

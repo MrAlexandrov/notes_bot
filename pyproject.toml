@@ -9,6 +9,7 @@ readme = "README.md"
 python = "^3.11"
 python-telegram-bot = "^21.0"
 python-dotenv = "^1.0.0"
+ruff = "^0.14.4"
 
 [build-system]
 requires = ["poetry-core"]
