@@ -1,14 +1,14 @@
 version: '3.8'
 
 services:
-  telegram-bot:
+  notes_bot:
     build: .
-    container_name: telegram-notes-bot
+    container_name: notes_bot
     restart: unless-stopped
     env_file:
       - .env
     volumes:
-      - ./notes:/app/notes
+      - ${OBSIDIAN_VAULT_PATH}:/notes:rw
     logging:
       driver: "json-file"
       options:

@@ -24,8 +24,9 @@ async def cmd_today(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if content:
         date_escaped = escape_markdown_v2(filename[:-3])
+        content_escaped = escape_markdown_v2(content)
         await update.message.reply_text(
-            f"📝 *Заметка за {date_escaped}:*\n\n{content}", parse_mode="MarkdownV2"
+            f"📝 *Заметка за {date_escaped}:*\n\n{content_escaped}", parse_mode="MarkdownV2"
         )
     else:
         date_escaped = escape_markdown_v2(filename[:-3])
@@ -69,8 +70,9 @@ async def cmd_get(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
 
     if content:
         date_escaped = escape_markdown_v2(filename[:-3])
+        content_escaped = escape_markdown_v2(content)
         await update.message.reply_text(
-            f"📝 *Заметка за {date_escaped}:*\n\n{content}", parse_mode="MarkdownV2"
+            f"📝 *Заметка за {date_escaped}:*\n\n{content_escaped}", parse_mode="MarkdownV2"
         )
     else:
         date_escaped = escape_markdown_v2(filename[:-3])

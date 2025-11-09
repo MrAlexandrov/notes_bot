@@ -1,32 +1,76 @@
 """Notes management module."""
 
 import logging
-from .config import NOTES_DIR
+from pathlib import Path
+from .config import DAILY_NOTES_DIR, DAILY_TEMPLATE_PATH
 from .utils import get_today_filename
 
 logger = logging.getLogger(__name__)
 
 
+def _create_daily_note_from_template(filepath: Path, date_str: str) -> None:
+    """Create a new daily note from template"""
+    if not DAILY_TEMPLATE_PATH.exists():
+        logger.warning(f"Template not found at {DAILY_TEMPLATE_PATH}, creating basic note")
+        # Create a basic daily note if template doesn't exist
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(f"---\n")
+            f.write(f'date: "[[{date_str}]]"\n')
+            f.write(f'title: "[[{date_str}]]"\n')
+            f.write(f"tags:\n")
+            f.write(f"  - daily\n")
+            f.write(f"Оценка:\n")
+            f.write(f"---\n")
+            f.write(f"- [ ] Доброго утра!\n")
+            f.write(f"- [ ] Заполнить дневник\n")
+            f.write(f"---\n\n")
+        return
+
+    # Read template and replace date placeholders
+    try:
+        with open(DAILY_TEMPLATE_PATH, "r", encoding="utf-8") as f:
+            template_content = f.read()
+        
+        # Replace Obsidian template variables with actual date
+        # {{date:DD-MMM-YYYY}} -> actual date
+        content = template_content.replace("{{date:DD-MMM-YYYY}}", date_str)
+        
+        # Write to new file
+        with open(filepath, "w", encoding="utf-8") as f:
+            f.write(content)
+        
+        logger.info(f"Created daily note from template: {filepath}")
+    except Exception as e:
+        logger.error(f"Error creating note from template: {e}")
+        raise
+
+
 def save_message(text: str) -> None:
-    """Save message to today's note file"""
+    """Save message to today's daily note file"""
     filename = get_today_filename()
-    filepath = NOTES_DIR / filename
+    filepath = DAILY_NOTES_DIR / filename
+    
+    # Extract date string without .md extension for template
+    date_str = filename[:-3]  # Remove .md
 
-    # Check if file exists to determine if we need to add a newline
+    # Check if file exists
     file_exists = filepath.exists()
+    
+    if not file_exists:
+        # Create from template
+        _create_daily_note_from_template(filepath, date_str)
 
+    # Append message to the file
     with open(filepath, "a", encoding="utf-8") as f:
-        if file_exists:
-            # Add empty line before new message
-            f.write("\n\n")
-        f.write(f"```\n{text}\n```")
+        # Add message with proper formatting
+        f.write(f"{text}\n")
 
     logger.info(f"Message saved to {filename}")
 
 
 def read_note(filename: str) -> str | None:
     """Read note file and return its content"""
-    filepath = NOTES_DIR / filename
+    filepath = DAILY_NOTES_DIR / filename
 
     if not filepath.exists():
         return None

@@ -18,8 +18,5 @@ RUN poetry install --no-interaction --no-ansi --no-root
 COPY src/ ./src/
 COPY main.py .
 
-# Create notes directory
-RUN mkdir -p /app/notes
-
 # Run the bot
 CMD ["python", "main.py"]
