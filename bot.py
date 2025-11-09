@@ -1,7 +1,7 @@
 import os
 import logging
 import re
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 from pathlib import Path
 from telegram import Update
 from telegram.ext import Application, MessageHandler, CommandHandler, filters, ContextTypes
@@ -29,8 +29,20 @@ NOTES_DIR.mkdir(exist_ok=True)
 
 def get_today_filename() -> str:
     """Generate filename in format dd-Mmm-yyyy (e.g., 11-Oct-2025)"""
-    now = datetime.now()
-    return now.strftime('%d-%b-%Y') + '.md'
+    # Get current UTC time
+    now_utc = datetime.now(timezone.utc)
+    
+    # Convert to Moscow time (UTC+3)
+    moscow_time = now_utc + timedelta(hours=3)
+    
+    # If time is before 7 AM in Moscow, consider it previous day
+    if moscow_time.hour < 7:
+        # Subtract one day
+        adjusted_time = moscow_time - timedelta(days=1)
+    else:
+        adjusted_time = moscow_time
+    
+    return adjusted_time.strftime('%d-%b-%Y') + '.md'
 
 
 def save_message(text: str) -> None:
