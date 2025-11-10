@@ -37,7 +37,6 @@ class StateManager:
         Returns:
             UserContext object for the specified user
         """
-        logger.warning(f"Find me. User {user_id} getting context")
         if user_id not in self._contexts:
             # Get current date in the required format
             today_filename = get_today_filename()
@@ -73,7 +72,6 @@ class StateManager:
         Example:
             manager.update_context(123, state=UserState.TASKS_VIEW, task_page=1)
         """
-        logger.warning(f"Find me. User {user_id} updating state = {kwargs}")
         context = self.get_context(user_id)
 
         for key, value in kwargs.items():
@@ -90,7 +88,6 @@ class StateManager:
         Args:
             user_id: Telegram user ID
         """
-        logger.warning(f"Find me. User {user_id} reseting context")
         context = self.get_context(user_id)
         context.state = UserState.IDLE
         context.task_page = 0

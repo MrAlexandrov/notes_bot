@@ -134,11 +134,6 @@ async def handle_menu_rating(query, user_id: int) -> None:
     # Update state to waiting for rating
     state_manager.update_context(user_id, state=UserState.WAITING_RATING)
 
-    logger.warning(f"Find me. User {user_id} requested rating input")
-    logger.warning(
-        f"Find me. User {user_id} state = {state_manager.get_context(user_id).state}"
-    )
-
     # Send rating request
     text = "📊 Введите оценку дня \\(0\\-10\\):"
 

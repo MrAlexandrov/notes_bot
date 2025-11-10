@@ -50,8 +50,6 @@ async def handle_text_message(
     # Get filepath for active note
     filepath = DAILY_NOTES_DIR / f"{active_date}.md"
 
-    logger.warning(f"Find me. User {user_id} state = {current_state}")
-
     try:
         # Handle based on state
         if current_state == UserState.WAITING_RATING:
