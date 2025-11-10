@@ -6,21 +6,17 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from ..config import ROOT_ID, DAILY_NOTES_DIR, NOTES_DIR
-from ..states.manager import StateManager
-from ..states.context import UserState
+from ..states import UserState, state_manager
 from ..keyboards.main_menu import get_main_menu_keyboard
 from ..keyboards.tasks import get_tasks_keyboard, get_task_add_keyboard
 from ..keyboards.calendar import get_calendar_keyboard
-from ..features.rating import get_rating, get_rating_impl
+from ..features.rating import get_rating_impl
 from ..features.tasks import parse_tasks, toggle_task
 from ..features.calendar_ops import get_existing_dates
 from ..notes import read_note, _create_daily_note_from_template
 from ..utils import escape_markdown_v2
 
 logger = logging.getLogger(__name__)
-
-# Global state manager instance
-state_manager = StateManager()
 
 
 async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
@@ -67,13 +63,13 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             menu_action = parts[1]
 
             if menu_action == "rating":
-                await handle_menu_rating(query, user_id, state_manager)
+                await handle_menu_rating(query, user_id)
             elif menu_action == "tasks":
-                await handle_menu_tasks(query, user_id, state_manager)
+                await handle_menu_tasks(query, user_id)
             elif menu_action == "note":
-                await handle_menu_note(query, user_id, state_manager)
+                await handle_menu_note(query, user_id)
             elif menu_action == "calendar":
-                await handle_menu_calendar(query, user_id, state_manager)
+                await handle_menu_calendar(query, user_id)
 
         elif action == "task":
             if len(parts) < 2:
@@ -84,16 +80,16 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 
             if task_action == "toggle" and len(parts) >= 3:
                 task_index = int(parts[2])
-                await handle_task_toggle(query, user_id, task_index, state_manager)
+                await handle_task_toggle(query, user_id, task_index)
             elif task_action == "add":
-                await handle_task_add(query, user_id, state_manager)
+                await handle_task_add(query, user_id)
             elif task_action == "page" and len(parts) >= 3:
                 page = int(parts[2])
-                await handle_task_page(query, user_id, page, state_manager)
+                await handle_task_page(query, user_id, page)
             elif task_action == "back":
-                await handle_task_back(query, user_id, state_manager)
+                await handle_task_back(query, user_id)
             elif task_action == "cancel":
-                await handle_task_cancel(query, user_id, state_manager)
+                await handle_task_cancel(query, user_id)
             elif task_action == "noop":
                 pass  # No operation for pagination display
 
@@ -105,16 +101,16 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
             cal_action = parts[1]
 
             if cal_action == "prev":
-                await handle_cal_prev(query, user_id, state_manager)
+                await handle_cal_prev(query, user_id)
             elif cal_action == "next":
-                await handle_cal_next(query, user_id, state_manager)
+                await handle_cal_next(query, user_id)
             elif cal_action == "select" and len(parts) >= 3:
                 date = parts[2]
-                await handle_cal_select(query, user_id, date, state_manager)
+                await handle_cal_select(query, user_id, date)
             elif cal_action == "today":
-                await handle_cal_today(query, user_id, state_manager)
+                await handle_cal_today(query, user_id)
             elif cal_action == "back":
-                await handle_cal_back(query, user_id, state_manager)
+                await handle_cal_back(query, user_id)
             elif cal_action == "noop":
                 pass  # No operation for header/weekday display
 
@@ -131,7 +127,7 @@ async def handle_callback(update: Update, context: ContextTypes.DEFAULT_TYPE) ->
 # Menu handlers
 
 
-async def handle_menu_rating(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_menu_rating(query, user_id: int) -> None:
     """Handle rating menu button - request rating input."""
     state_manager.get_context(user_id)
 
@@ -139,7 +135,9 @@ async def handle_menu_rating(query, user_id: int, state_manager: StateManager) -
     state_manager.update_context(user_id, state=UserState.WAITING_RATING)
 
     logger.warning(f"Find me. User {user_id} requested rating input")
-    logger.warning(f"Find me. User {user_id} state = {state_manager.get_context(user_id).state}")
+    logger.warning(
+        f"Find me. User {user_id} state = {state_manager.get_context(user_id).state}"
+    )
 
     # Send rating request
     text = "📊 Введите оценку дня \\(0\\-10\\):"
@@ -149,7 +147,7 @@ async def handle_menu_rating(query, user_id: int, state_manager: StateManager) -
     logger.info(f"User {user_id} requested rating input")
 
 
-async def handle_menu_tasks(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_menu_tasks(query, user_id: int) -> None:
     """Handle tasks menu button - show tasks list."""
     user_context = state_manager.get_context(user_id)
     active_date = user_context.active_date
@@ -188,7 +186,7 @@ async def handle_menu_tasks(query, user_id: int, state_manager: StateManager) ->
     logger.info(f"User {user_id} opened tasks view")
 
 
-async def handle_menu_note(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_menu_note(query, user_id: int) -> None:
     """Handle note menu button - display current note."""
     user_context = state_manager.get_context(user_id)
     active_date = user_context.active_date
@@ -237,9 +235,7 @@ async def handle_menu_note(query, user_id: int, state_manager: StateManager) -> 
     logger.info(f"User {user_id} viewed note for {active_date}")
 
 
-async def handle_menu_calendar(
-    query, user_id: int, state_manager: StateManager
-) -> None:
+async def handle_menu_calendar(query, user_id: int) -> None:
     """Handle calendar menu button - show calendar."""
     user_context = state_manager.get_context(user_id)
     active_date = user_context.active_date
@@ -268,9 +264,7 @@ async def handle_menu_calendar(
 # Task handlers
 
 
-async def handle_task_toggle(
-    query, user_id: int, task_index: int, state_manager: StateManager
-) -> None:
+async def handle_task_toggle(query, user_id: int, task_index: int) -> None:
     """Handle task toggle button - switch task completion status."""
     user_context = state_manager.get_context(user_id)
     active_date = user_context.active_date
@@ -297,7 +291,7 @@ async def handle_task_toggle(
         await query.answer("❌ Ошибка при переключении задачи", show_alert=True)
 
 
-async def handle_task_add(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_task_add(query, user_id: int) -> None:
     """Handle add task button - request new task text."""
     # Update state
     state_manager.update_context(user_id, state=UserState.WAITING_NEW_TASK)
@@ -311,9 +305,7 @@ async def handle_task_add(query, user_id: int, state_manager: StateManager) -> N
     logger.info(f"User {user_id} started adding new task")
 
 
-async def handle_task_page(
-    query, user_id: int, page: int, state_manager: StateManager
-) -> None:
+async def handle_task_page(query, user_id: int, page: int) -> None:
     """Handle task pagination - change page."""
     user_context = state_manager.get_context(user_id)
     active_date = user_context.active_date
@@ -339,7 +331,7 @@ async def handle_task_page(
         logger.info(f"User {user_id} changed to task page {page}")
 
 
-async def handle_task_back(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_task_back(query, user_id: int) -> None:
     """Handle task back button - return to main menu."""
     user_context = state_manager.get_context(user_id)
     active_date = user_context.active_date
@@ -356,7 +348,7 @@ async def handle_task_back(query, user_id: int, state_manager: StateManager) -> 
     logger.info(f"User {user_id} returned to main menu from tasks")
 
 
-async def handle_task_cancel(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_task_cancel(query, user_id: int) -> None:
     """Handle task cancel button - cancel adding new task."""
     user_context = state_manager.get_context(user_id)
     active_date = user_context.active_date
@@ -384,7 +376,8 @@ async def handle_task_cancel(query, user_id: int, state_manager: StateManager) -
 
 # Calendar handlers
 
-async def handle_cal_prev(query, user_id: int, state_manager: StateManager) -> None:
+
+async def handle_cal_prev(query, user_id: int) -> None:
     """Handle calendar previous month button."""
     user_context = state_manager.get_context(user_id)
 
@@ -418,7 +411,7 @@ async def handle_cal_prev(query, user_id: int, state_manager: StateManager) -> N
     logger.info(f"User {user_id} navigated to {month}/{year}")
 
 
-async def handle_cal_next(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_cal_next(query, user_id: int) -> None:
     """Handle calendar next month button."""
     user_context = state_manager.get_context(user_id)
 
@@ -452,9 +445,7 @@ async def handle_cal_next(query, user_id: int, state_manager: StateManager) -> N
     logger.info(f"User {user_id} navigated to {month}/{year}")
 
 
-async def handle_cal_select(
-    query, user_id: int, date: str, state_manager: StateManager
-) -> None:
+async def handle_cal_select(query, user_id: int, date: str) -> None:
     """Handle calendar date selection."""
     # Set as active date
     state_manager.set_active_date(user_id, date)
@@ -483,7 +474,7 @@ async def handle_cal_select(
     logger.info(f"User {user_id} selected date {date}")
 
 
-async def handle_cal_today(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_cal_today(query, user_id: int) -> None:
     """Handle calendar today button - return to current date."""
     from ..utils import get_today_filename
 
@@ -513,7 +504,7 @@ async def handle_cal_today(query, user_id: int, state_manager: StateManager) -> 
     logger.info(f"User {user_id} returned to today: {today_date}")
 
 
-async def handle_cal_back(query, user_id: int, state_manager: StateManager) -> None:
+async def handle_cal_back(query, user_id: int) -> None:
     """Handle calendar back button - return to main menu."""
     user_context = state_manager.get_context(user_id)
     active_date = user_context.active_date

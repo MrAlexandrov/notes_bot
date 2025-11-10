@@ -9,6 +9,7 @@ from ..utils import get_today_filename
 
 logger = logging.getLogger(__name__)
 
+
 class StateManager:
     """
     Manages user contexts and states for the telegram bot.

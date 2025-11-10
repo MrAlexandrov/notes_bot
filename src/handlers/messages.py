@@ -5,17 +5,14 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from ..config import ROOT_ID, DAILY_NOTES_DIR
-from ..states.manager import StateManager
 from ..states.context import UserState
+from ..states import state_manager
 from ..keyboards.main_menu import get_main_menu_keyboard
 from ..features.rating import update_rating
 from ..features.tasks import add_task
 from ..utils import escape_markdown_v2
 
 logger = logging.getLogger(__name__)
-
-# Global state manager instance
-state_manager = StateManager()
 
 
 async def handle_text_message(

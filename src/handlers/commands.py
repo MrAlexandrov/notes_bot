@@ -5,14 +5,11 @@ from telegram import Update
 from telegram.ext import ContextTypes
 
 from ..config import ROOT_ID
-from ..states.manager import StateManager
 from ..keyboards.main_menu import get_main_menu_keyboard
+from ..states import state_manager
 from ..utils import escape_markdown_v2
 
 logger = logging.getLogger(__name__)
-
-# Global state manager instance
-state_manager = StateManager()
 
 
 async def cmd_start(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
