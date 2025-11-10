@@ -2,9 +2,21 @@
 
 import logging
 from telegram import Update
-from telegram.ext import Application, MessageHandler, CommandHandler, filters
+from telegram.ext import (
+    Application,
+    MessageHandler,
+    CommandHandler,
+    CallbackQueryHandler,
+    ContextTypes,
+    filters,
+)
 from .config import BOT_TOKEN, ROOT_ID
-from .handlers import cmd_today, cmd_get, handle_message
+# Handlers
+from .handlers import (
+    cmd_start,
+    handle_text_message,
+    handle_callback,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -22,14 +34,27 @@ def main() -> None:
     # Create application
     application = Application.builder().token(BOT_TOKEN).build()
 
-    # Add command handlers
-    application.add_handler(CommandHandler("today", cmd_today))
-    application.add_handler(CommandHandler("get", cmd_get))
-
-    # Add message handler for text messages
+    # Register handlers
+    application.add_handler(CommandHandler("start", cmd_start))
+    application.add_handler(CallbackQueryHandler(handle_callback))
     application.add_handler(
-        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_message)
+        MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text_message)
     )
+
+    # Add error handler
+    async def error_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
+        """Handle errors"""
+        logger.error(f"Update {update} caused error {context.error}")
+        if update and update.effective_message:
+            try:
+                await update.effective_message.reply_text(
+                    "❌ Произошла ошибка\\. Попробуйте /start",
+                    parse_mode="MarkdownV2"
+                )
+            except Exception:
+                pass
+
+    application.add_error_handler(error_handler)
 
     logger.info("Bot started successfully")
 
