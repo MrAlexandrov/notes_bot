@@ -7,7 +7,7 @@ from typing import Optional
 
 class UserState(Enum):
     """Enumeration of possible user states in the bot."""
-    
+
     IDLE = "idle"
     WAITING_RATING = "waiting_rating"
     TASKS_VIEW = "tasks_view"
@@ -19,7 +19,7 @@ class UserState(Enum):
 class UserContext:
     """
     Context information for a user's current session.
-    
+
     Attributes:
         user_id: Telegram user ID
         state: Current state of the user in the bot workflow
@@ -29,7 +29,7 @@ class UserContext:
         task_page: Current page number for task pagination (0-indexed)
         last_message_id: ID of the last bot message for editing purposes
     """
-    
+
     user_id: int
     state: UserState = UserState.IDLE
     active_date: str = ""

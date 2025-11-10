@@ -1,7 +1,6 @@
 """Text message handlers for the Notes Bot."""
 
 import logging
-from pathlib import Path
 from telegram import Update
 from telegram.ext import ContextTypes
 
@@ -9,7 +8,6 @@ from ..config import ROOT_ID, DAILY_NOTES_DIR
 from ..states.manager import StateManager
 from ..states.context import UserState
 from ..keyboards.main_menu import get_main_menu_keyboard
-from ..keyboards.tasks import get_task_add_keyboard
 from ..features.rating import update_rating
 from ..features.tasks import add_task
 from ..utils import escape_markdown_v2
@@ -20,39 +18,43 @@ logger = logging.getLogger(__name__)
 state_manager = StateManager()
 
 
-async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+async def handle_text_message(
+    update: Update, context: ContextTypes.DEFAULT_TYPE
+) -> None:
     """
     Handle text messages based on user state.
-    
+
     Processes text input differently depending on the current user state:
     - WAITING_RATING: Validates and saves rating (0-10)
     - WAITING_NEW_TASK: Adds new task to the note
     - IDLE or other: Adds text to active note
-    
+
     Args:
         update: Telegram update object
         context: Bot context
     """
     if not update.message or not update.effective_user or not update.message.text:
         return
-    
+
     user_id = update.effective_user.id
     text = update.message.text.strip()
-    
+
     # Check authorization
     if ROOT_ID and user_id != ROOT_ID:
         await update.message.reply_text("⛔ Unauthorized access.")
         logger.warning(f"Unauthorized message from user {user_id}")
         return
-    
+
     # Get user context
     user_context = state_manager.get_context(user_id)
     current_state = user_context.state
     active_date = user_context.active_date
-    
+
     # Get filepath for active note
     filepath = DAILY_NOTES_DIR / f"{active_date}.md"
-    
+
+    logger.warning(f"Find me. User {user_id} state = {current_state}")
+
     try:
         # Handle based on state
         if current_state == UserState.WAITING_RATING:
@@ -62,89 +64,86 @@ async def handle_text_message(update: Update, context: ContextTypes.DEFAULT_TYPE
                 if rating < 0 or rating > 10:
                     await update.message.reply_text(
                         "❌ Оценка должна быть от 0 до 10\\. Попробуйте снова\\.",
-                        parse_mode="MarkdownV2"
+                        parse_mode="MarkdownV2",
                     )
                     return
-                
+
                 # Update rating in note
                 if update_rating(filepath, rating):
                     # Reset state to IDLE
                     state_manager.update_context(user_id, state=UserState.IDLE)
-                    
+
                     # Send confirmation with main menu
                     confirmation_text = f"✅ Оценка {rating} сохранена\\!"
                     keyboard = get_main_menu_keyboard(active_date)
-                    
+
                     await update.message.reply_text(
                         confirmation_text,
                         reply_markup=keyboard,
-                        parse_mode="MarkdownV2"
+                        parse_mode="MarkdownV2",
                     )
                     logger.info(f"User {user_id} set rating {rating} for {active_date}")
                 else:
                     await update.message.reply_text(
-                        "❌ Ошибка при сохранении оценки\\.",
-                        parse_mode="MarkdownV2"
+                        "❌ Ошибка при сохранении оценки\\.", parse_mode="MarkdownV2"
                     )
-            
+
             except ValueError:
                 await update.message.reply_text(
                     "❌ Пожалуйста, введите число от 0 до 10\\.",
-                    parse_mode="MarkdownV2"
+                    parse_mode="MarkdownV2",
                 )
-        
+
         elif current_state == UserState.WAITING_NEW_TASK:
             # Add new task
             if add_task(filepath, text):
                 # Return to tasks view
                 state_manager.update_context(user_id, state=UserState.TASKS_VIEW)
-                
+
                 # Send confirmation
                 confirmation_text = f"✅ Задача добавлена: {escape_markdown_v2(text)}"
-                
+
                 await update.message.reply_text(
-                    confirmation_text,
-                    parse_mode="MarkdownV2"
+                    confirmation_text, parse_mode="MarkdownV2"
                 )
                 logger.info(f"User {user_id} added task: {text}")
-                
+
                 # Show tasks menu again (will be handled by callback handler)
                 await update.message.reply_text(
-                    "Используйте кнопку \"Задачи\" для просмотра\\.",
-                    parse_mode="MarkdownV2"
+                    'Используйте кнопку "Задачи" для просмотра\\.',
+                    parse_mode="MarkdownV2",
                 )
             else:
                 await update.message.reply_text(
-                    "❌ Ошибка при добавлении задачи\\.",
-                    parse_mode="MarkdownV2"
+                    "❌ Ошибка при добавлении задачи\\.", parse_mode="MarkdownV2"
                 )
-        
+
         else:
             # IDLE or other states - add text to active note
             # Ensure note exists
             if not filepath.exists():
                 # Create note from template
                 from ..notes import _create_daily_note_from_template
+
                 _create_daily_note_from_template(filepath, active_date)
-            
+
             # Append text to note
             with open(filepath, "a", encoding="utf-8") as f:
                 f.write(f"{text}\n")
-            
+
             # Send confirmation with main menu
-            confirmation_text = f"✅ Текст добавлен в заметку {escape_markdown_v2(active_date)}"
+            confirmation_text = (
+                f"✅ Текст добавлен в заметку {escape_markdown_v2(active_date)}"
+            )
             keyboard = get_main_menu_keyboard(active_date)
-            
+
             await update.message.reply_text(
-                confirmation_text,
-                reply_markup=keyboard,
-                parse_mode="MarkdownV2"
+                confirmation_text, reply_markup=keyboard, parse_mode="MarkdownV2"
             )
             logger.info(f"User {user_id} added text to {active_date}")
-    
+
     except Exception as e:
         logger.error(f"Error handling text message from user {user_id}: {e}")
         await update.message.reply_text(
-            "❌ Произошла ошибка при обработке сообщения\\.",
-            parse_mode="MarkdownV2"
+            "❌ Произошла ошибка при обработке сообщения\\.", parse_mode="MarkdownV2"
         )

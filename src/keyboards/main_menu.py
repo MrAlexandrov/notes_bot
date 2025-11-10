@@ -6,10 +6,10 @@ from telegram import InlineKeyboardButton, InlineKeyboardMarkup
 def get_main_menu_keyboard(active_date: str) -> InlineKeyboardMarkup:
     """
     Generate the main menu keyboard with action buttons.
-    
+
     Args:
         active_date: Currently active date in DD-MMM-YYYY format
-        
+
     Returns:
         InlineKeyboardMarkup with main menu buttons
     """
@@ -23,5 +23,5 @@ def get_main_menu_keyboard(active_date: str) -> InlineKeyboardMarkup:
             InlineKeyboardButton("📅 Календарь", callback_data="menu:calendar"),
         ],
     ]
-    
+
     return InlineKeyboardMarkup(keyboard)

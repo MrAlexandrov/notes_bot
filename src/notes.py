@@ -11,34 +11,36 @@ logger = logging.getLogger(__name__)
 def _create_daily_note_from_template(filepath: Path, date_str: str) -> None:
     """Create a new daily note from template"""
     if not DAILY_TEMPLATE_PATH.exists():
-        logger.warning(f"Template not found at {DAILY_TEMPLATE_PATH}, creating basic note")
+        logger.warning(
+            f"Template not found at {DAILY_TEMPLATE_PATH}, creating basic note"
+        )
         # Create a basic daily note if template doesn't exist
         with open(filepath, "w", encoding="utf-8") as f:
-            f.write(f"---\n")
+            f.write("---\n")
             f.write(f'date: "[[{date_str}]]"\n')
             f.write(f'title: "[[{date_str}]]"\n')
-            f.write(f"tags:\n")
-            f.write(f"  - daily\n")
-            f.write(f"Оценка:\n")
-            f.write(f"---\n")
-            f.write(f"- [ ] Доброго утра!\n")
-            f.write(f"- [ ] Заполнить дневник\n")
-            f.write(f"---\n\n")
+            f.write("tags:\n")
+            f.write("  - daily\n")
+            f.write("Оценка:\n")
+            f.write("---\n")
+            f.write("- [ ] Доброго утра!\n")
+            f.write("- [ ] Заполнить дневник\n")
+            f.write("---\n\n")
         return
 
     # Read template and replace date placeholders
     try:
         with open(DAILY_TEMPLATE_PATH, "r", encoding="utf-8") as f:
             template_content = f.read()
-        
+
         # Replace Obsidian template variables with actual date
         # {{date:DD-MMM-YYYY}} -> actual date
         content = template_content.replace("{{date:DD-MMM-YYYY}}", date_str)
-        
+
         # Write to new file
         with open(filepath, "w", encoding="utf-8") as f:
             f.write(content)
-        
+
         logger.info(f"Created daily note from template: {filepath}")
     except Exception as e:
         logger.error(f"Error creating note from template: {e}")
@@ -49,13 +51,13 @@ def save_message(text: str) -> None:
     """Save message to today's daily note file"""
     filename = get_today_filename()
     filepath = DAILY_NOTES_DIR / filename
-    
+
     # Extract date string without .md extension for template
     date_str = filename[:-3]  # Remove .md
 
     # Check if file exists
     file_exists = filepath.exists()
-    
+
     if not file_exists:
         # Create from template
         _create_daily_note_from_template(filepath, date_str)

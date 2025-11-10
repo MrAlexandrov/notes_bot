@@ -11,6 +11,7 @@ from telegram.ext import (
     filters,
 )
 from .config import BOT_TOKEN, ROOT_ID
+
 # Handlers
 from .handlers import (
     cmd_start,
@@ -48,8 +49,7 @@ def main() -> None:
         if update and update.effective_message:
             try:
                 await update.effective_message.reply_text(
-                    "❌ Произошла ошибка\\. Попробуйте /start",
-                    parse_mode="MarkdownV2"
+                    "❌ Произошла ошибка\\. Попробуйте /start", parse_mode="MarkdownV2"
                 )
             except Exception:
                 pass
