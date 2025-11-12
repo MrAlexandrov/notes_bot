@@ -103,9 +103,11 @@ async def handle_text_message(
                 )
                 logger.info(f"User {user_id} added task: {text}")
 
+                keyboard = get_main_menu_keyboard(active_date)
                 # Show tasks menu again (will be handled by callback handler)
                 await update.message.reply_text(
                     'Используйте кнопку "Задачи" для просмотра\\.',
+                    reply_markup=keyboard,
                     parse_mode="MarkdownV2",
                 )
             else:
