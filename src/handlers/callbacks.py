@@ -225,7 +225,13 @@ async def handle_menu_note(query, user_id: int) -> None:
     # Get main menu keyboard
     keyboard = get_main_menu_keyboard(active_date)
 
-    await query.edit_message_text(text, reply_markup=keyboard, parse_mode="MarkdownV2")
+    try:
+        # TODO: Check if text and keyboard are the same
+        await query.edit_message_text(
+            text, reply_markup=keyboard, parse_mode="MarkdownV2"
+        )
+    except Exception as e:
+        logger.warning(f"Error editing message, probably note did not changed: {e}")
 
     logger.info(f"User {user_id} viewed note for {active_date}")
 
