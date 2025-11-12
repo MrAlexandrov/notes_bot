@@ -27,7 +27,7 @@ def get_tasks_keyboard(
 
     # Add task buttons
     for task in tasks[start_idx:end_idx]:
-        checkbox = "☑" if task["completed"] else "☐"
+        checkbox = "✅" if task["completed"] else "❌"
         button_text = f"{checkbox} {task['text']}"
         callback_data = f"task:toggle:{task['index']}"
         keyboard.append(
