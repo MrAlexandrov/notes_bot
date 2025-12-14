@@ -39,24 +39,29 @@ BOT_TOKEN=your_bot_token_here
 ROOT_ID=your_telegram_id_here
 
 # Obsidian Vault Configuration (REQUIRED)
-OBSIDIAN_VAULT_PATH=/path/to/your/obsidian/vault
+# Path to your Obsidian vault on the host machine
+OBSIDIAN_VAULT_PATH=/home/maxim/Yandex.Disk
 
-# Notes Configuration (REQUIRED)
-NOTES_DIR=/notes
-TEMPLATE_DIR=/notes/Templates
+# Notes Configuration (OPTIONAL)
+# Relative paths from OBSIDIAN_VAULT_PATH
+# Default values shown below - only override if your structure is different
+# NOTES_SUBDIR=notes
+# TEMPLATE_SUBDIR=notes/Templates
 ```
 
 **Параметры:**
 - `BOT_TOKEN` - токен вашего бота от BotFather (обязательно)
 - `ROOT_ID` - ваш Telegram ID (обязательно)
 - `OBSIDIAN_VAULT_PATH` - **полный путь** к вашему хранилищу Obsidian на хост-машине (обязательно)
-- `NOTES_DIR` - путь внутри контейнера, обычно `/notes` (обязательно)
-- `TEMPLATE_DIR` - путь к шаблонам внутри контейнера, обычно `/notes/Templates` (обязательно)
+- `NOTES_SUBDIR` - относительный путь к папке с заметками от корня хранилища (опционально, по умолчанию `notes`)
+- `TEMPLATE_SUBDIR` - относительный путь к папке с шаблонами от корня хранилища (опционально, по умолчанию `notes/Templates`)
 
 **Примеры путей для `OBSIDIAN_VAULT_PATH`:**
-- На локальном компьютере: `/Users/username/Yandex.Disk.localized/notes`
-- На виртуальной машине: `/home/user/obsidian-vault`
+- На локальном компьютере: `/Users/username/Yandex.Disk`
+- На виртуальной машине: `/home/maxim/Yandex.Disk`
 - На Windows: `C:/Users/username/Documents/ObsidianVault`
+
+**Важно:** Теперь достаточно указать только базовый путь к хранилищу Obsidian. Пути к заметкам и шаблонам вычисляются автоматически относительно базового пути. Если у вас нестандартная структура папок, вы можете переопределить `NOTES_SUBDIR` и `TEMPLATE_SUBDIR`.
 
 ### 3. Запустите бота с Docker
 
@@ -76,8 +81,10 @@ curl -sSL https://install.python-poetry.org | python3 -
 poetry install
 
 # Настройте переменные окружения для локального запуска
-export NOTES_DIR="/path/to/your/obsidian/notes"
-export TEMPLATE_DIR="/path/to/your/obsidian/notes/Templates"
+export OBSIDIAN_VAULT_PATH="/home/maxim/Yandex.Disk"
+# Опционально, если структура отличается от стандартной:
+# export NOTES_SUBDIR="notes"
+# export TEMPLATE_SUBDIR="notes/Templates"
 
 # Запустите бота
 poetry run python main.py
@@ -225,30 +232,45 @@ tags:
 
 ### Переменные окружения
 
-Все переменные окружения **обязательны** и должны быть указаны в файле `.env`:
+**Обязательные переменные:**
 
-- `BOT_TOKEN` - токен Telegram бота (обязательно)
-- `ROOT_ID` - ID авторизованного пользователя (обязательно)
-- `OBSIDIAN_VAULT_PATH` - путь к хранилищу Obsidian на хост-машине (обязательно, только для Docker)
-- `NOTES_DIR` - путь к хранилищу внутри контейнера (обязательно, обычно `/notes`)
-- `TEMPLATE_DIR` - путь к папке с шаблонами (обязательно, обычно `/notes/Templates`)
+- `BOT_TOKEN` - токен Telegram бота
+- `ROOT_ID` - ID авторизованного пользователя
+- `OBSIDIAN_VAULT_PATH` - путь к хранилищу Obsidian на хост-машине
+
+**Опциональные переменные:**
+
+- `NOTES_SUBDIR` - относительный путь к папке с заметками (по умолчанию: `notes`)
+- `TEMPLATE_SUBDIR` - относительный путь к папке с шаблонами (по умолчанию: `notes/Templates`)
 
 **Важно:** Бот проверяет существование всех указанных путей при запуске и выдаст ошибку, если какой-то путь не найден или переменная не указана.
 
+### Как работает Docker
+
+При запуске через Docker Compose:
+1. Ваше хранилище Obsidian (указанное в `OBSIDIAN_VAULT_PATH`) монтируется в контейнер по пути `/vault`
+2. Внутри контейнера переменная `OBSIDIAN_VAULT_PATH` автоматически переопределяется на `/vault`
+3. Пути к заметкам и шаблонам вычисляются относительно `/vault` внутри контейнера
+
+Это позволяет использовать одинаковую конфигурацию как для локального запуска, так и для Docker.
+
 ### Структура хранилища Obsidian
 
-Бот ожидает следующую структуру:
+Бот ожидает следующую структуру (по умолчанию):
 
 ```
-obsidian-vault/
-├── Daily/              # Папка с дневными заметками (создается автоматически)
-│   ├── 09-Nov-2025.md
-│   ├── 10-Nov-2025.md
-│   └── ...
-├── Templates/          # Папка с шаблонами
-│   └── Daily.md       # Шаблон дневной заметки
-└── ...                # Другие файлы и папки Obsidian
+obsidian-vault/                    # <- OBSIDIAN_VAULT_PATH
+├── notes/                         # <- NOTES_SUBDIR (по умолчанию)
+│   ├── Daily/                     # Папка с дневными заметками (создается автоматически)
+│   │   ├── 09-Nov-2025.md
+│   │   ├── 10-Nov-2025.md
+│   │   └── ...
+│   └── Templates/                 # <- TEMPLATE_SUBDIR (по умолчанию)
+│       └── Daily.md              # Шаблон дневной заметки
+└── ...                           # Другие файлы и папки Obsidian
 ```
+
+Если у вас другая структура, переопределите `NOTES_SUBDIR` и `TEMPLATE_SUBDIR` в `.env`.
 
 ## Безопасность
 

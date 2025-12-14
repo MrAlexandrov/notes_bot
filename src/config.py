@@ -14,33 +14,55 @@ logging.basicConfig(
 )
 logging.getLogger("httpx").setLevel(logging.WARNING)
 
+
+def get_bot_token():
+    """Get Telegram bot token from environment."""
+    return os.getenv("BOT_TOKEN")
+
+
+def get_root_id():
+    """Get authorized user's Telegram ID from environment."""
+    _root_id = os.getenv("ROOT_ID")
+    return int(_root_id) if _root_id else None
+
+
+def get_notes_dir():
+    """Get notes directory path from environment.
+
+    For local run: uses host path directly (e.g., /home/maxim/Yandex.Disk/notes)
+    For Docker: automatically overridden to /notes in docker-compose.yml
+    """
+    NOTES_DIR_STR = os.getenv("NOTES_DIR")
+    if not NOTES_DIR_STR:
+        raise ValueError("NOTES_DIR environment variable must be set")
+
+    NOTES_DIR = Path(NOTES_DIR_STR)
+    if not NOTES_DIR.exists():
+        raise ValueError(f"Notes directory does not exist: {NOTES_DIR}")
+
+    return NOTES_DIR
+
+
 # Get configuration from environment
-BOT_TOKEN = os.getenv("BOT_TOKEN")
-_root_id = os.getenv("ROOT_ID")
-ROOT_ID = int(_root_id) if _root_id else None
+BOT_TOKEN = get_bot_token()
+ROOT_ID = get_root_id()
 
-# Notes directory - must be specified in environment variable
-NOTES_DIR_STR = os.getenv("NOTES_DIR")
-if not NOTES_DIR_STR:
-    raise ValueError("NOTES_DIR environment variable must be set")
+# Notes directory - base path for all notes and templates
+NOTES_DIR = get_notes_dir()
 
-NOTES_DIR = Path(NOTES_DIR_STR)
-if not NOTES_DIR.exists():
-    raise ValueError(f"NOTES_DIR path does not exist: {NOTES_DIR}")
+# Template subdirectory relative to NOTES_DIR (default: "Templates")
+TEMPLATE_SUBDIR = os.getenv("TEMPLATE_SUBDIR", "Templates")
+
+# Full path to templates directory
+TEMPLATE_DIR = NOTES_DIR / TEMPLATE_SUBDIR
+if not TEMPLATE_DIR.exists():
+    raise ValueError(f"Template directory does not exist: {TEMPLATE_DIR}")
 
 # Daily notes subdirectory
 DAILY_NOTES_DIR = NOTES_DIR / "Daily"
 DAILY_NOTES_DIR.mkdir(exist_ok=True)
 
-# Template directory and file - must be specified in environment variable
-TEMPLATE_DIR_STR = os.getenv("TEMPLATE_DIR")
-if not TEMPLATE_DIR_STR:
-    raise ValueError("TEMPLATE_DIR environment variable must be set")
-
-TEMPLATE_DIR = Path(TEMPLATE_DIR_STR)
-if not TEMPLATE_DIR.exists():
-    raise ValueError(f"TEMPLATE_DIR path does not exist: {TEMPLATE_DIR}")
-
+# Daily template file
 DAILY_TEMPLATE_PATH = TEMPLATE_DIR / "Daily.md"
 if not DAILY_TEMPLATE_PATH.exists():
     raise ValueError(f"Daily template not found at: {DAILY_TEMPLATE_PATH}")

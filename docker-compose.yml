@@ -8,7 +8,11 @@ services:
     env_file:
       - .env
     volumes:
-      - ${OBSIDIAN_VAULT_PATH}:/notes:rw
+      # Mount host notes directory to /notes in container
+      - ${NOTES_DIR}:/notes:rw
+    environment:
+      # Override NOTES_DIR to use container path
+      - NOTES_DIR=/notes
     logging:
       driver: "json-file"
       options:
