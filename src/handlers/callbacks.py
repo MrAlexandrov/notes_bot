@@ -494,7 +494,10 @@ async def handle_cal_today(query: CallbackQuery, user_id: int) -> None:
 
     text = f"📅 Календарь\n\nАктивная дата: {escape_markdown_v2(today_date)}"
 
-    await query.edit_message_text(text, reply_markup=keyboard, parse_mode="MarkdownV2")
+    try:
+        await query.edit_message_text(text, reply_markup=keyboard, parse_mode="MarkdownV2")
+    except Exception as e:
+        logger.warning(f"Error editing date, probably date did not changed: {e}")
 
     logger.info(f"User {user_id} returned to today: {today_date}")
 
