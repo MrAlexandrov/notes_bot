@@ -120,9 +120,9 @@ async def handle_text_message(
             # Ensure note exists
             if not filepath.exists():
                 # Create note from template
-                from ..notes import _create_daily_note_from_template
+                from ..notes import create_daily_note_from_template
 
-                _create_daily_note_from_template(filepath, active_date)
+                create_daily_note_from_template(filepath, active_date)
 
             # Append text to note
             with open(filepath, "a", encoding="utf-8") as f:

@@ -8,7 +8,7 @@ from .utils import get_today_filename
 logger = logging.getLogger(__name__)
 
 
-def _create_daily_note_from_template(filepath: Path, date_str: str) -> None:
+def create_daily_note_from_template(filepath: Path, date_str: str) -> None:
     """Create a new daily note from template"""
     if not DAILY_TEMPLATE_PATH.exists():
         logger.warning(
@@ -60,7 +60,7 @@ def save_message(text: str) -> None:
 
     if not file_exists:
         # Create from template
-        _create_daily_note_from_template(filepath, date_str)
+        create_daily_note_from_template(filepath, date_str)
 
     # Append message to the file
     with open(filepath, "a", encoding="utf-8") as f:
